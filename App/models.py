@@ -34,7 +34,7 @@ class Categories(models.Model):
         ('clothing', 'Clothing'),
     ]
     
-    # Use the choices parameter in the CharField
+    # Use the choices parameter in the CharField    
     name = models.CharField(max_length=100, choices=CATEGORY_CHOICES, unique=True)
     description = models.TextField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -50,7 +50,8 @@ class Products(models.Model):
     productinfo = models.TextField(null=True, blank=True)
     image = models.ImageField(null=True, blank=True)
     price = models.DecimalField(max_digits=7, decimal_places=2, null=True, blank=True)
-    rating = models.DecimalField(max_digits=4, decimal_places=2, null=True, blank=True) 
+    rating = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True) 
+    numReviews=models.IntegerField(null=True, blank=True,default=0)
     createdAt = models.DateTimeField(auto_now_add=True)
     stockcount = models.IntegerField(null=True, blank=True, default=0)
     productbrand = models.CharField(max_length=100, null=True, blank=True)
