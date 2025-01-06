@@ -3,12 +3,11 @@ from rest_framework.response import Response
 from rest_framework import generics,permissions
 from rest_framework.decorators import api_view
 # from .products import products
-from .models import Products
 from .serializers import *
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.permissions import IsAuthenticated,IsAdminUser
-from .models import User
+from .models import *
 from django.contrib.auth.hashers import make_password
 from rest_framework import status
 from rest_framework.decorators import permission_classes
@@ -52,21 +51,30 @@ def getRoutes(request):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def getProducts(request):
-    print(request)
-    products = Products.objects.all()
-    print(products)
+    products = Products.objects.prefetch_related('images').all()
     serializer = ProductSerializer(products, many=True) 
-    print(serializer)
     return Response(serializer.data)
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def getProduct(request, pk):
-    product = Products.objects.get(_id=pk)
-    print(product)
+    try:
+        # Fetch the product by primary key
+        product = Products.objects.prefetch_related('images').get(id=pk)
+    except Products.DoesNotExist:
+        return Response({"detail": "Product not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    # Serialize the product
     serializer = ProductSerializer(product, many=False)
-    print(serializer)
-    return Response(serializer.data)
+    response_data = serializer.data
+
+     # Ensure the images contain only relative URLs
+    for image in response_data.get('images', []):
+        if image.get('image'):
+            image['image'] = image['image']
+
+    return Response(response_data)
+
 
 class LoginView(generics.CreateAPIView):
     permission_classes = [permissions.AllowAny]
@@ -81,11 +89,8 @@ class LoginView(generics.CreateAPIView):
 
     def post(self, request, *args, **kwargs):
         user_request_data = request.data
-        print("usr=er",user_request_data)
         email = user_request_data.get("username")
-        print("e",email)
         password = user_request_data.get("password")
-        print("pass",password)
 
         if not email or not password:
             return Response({
@@ -148,28 +153,22 @@ class LoginView(generics.CreateAPIView):
 @permission_classes([IsAuthenticated])
 def getUserProfiles(request):
     user = request.user
-    print(user)
     serializer = LoginSerializer(user, many=False)
-    print(serializer)
     return Response(serializer.data)
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def getUsers(request):
     users = User.objects.all()
-    print("user1",users)
-    serializer = UserSerializer(users, many=True)
-    print("serializer2",serializer)
+    serializer = LoginSerializer(users, many=True)
     return Response(serializer.data)    
 
 
 @api_view(['POST'])
 def registerUser(request):
     data=request.data
-    print("data",data)
     try:
         user= User.objects.create(first_name=data['fname'],last_name=data['lname'],username=data['email'],email=data['email'],password=make_password(data['password']),is_active=False)
-        print("user",user)
 
         # generate token for sending mail
         email_subject="Activate Your Account"
@@ -183,15 +182,12 @@ def registerUser(request):
            }
 
         )
-        print(message)
         email_message=EmailMessage(email_subject,message,settings.EMAIL_HOST_USER,[data['email']])
-        print("emailMessage",email_message)
         email_message.send()
         EmailThread(email_message).start()
         # message={'details':"Activate Your Account please check click link in gmail for account activation"}
         # return Response(message)     
         serialize=UserSerializerwithRegister(user,many=False)
-        print("serialzeer",serialize)
         return Response(serialize.data)
     
     except Exception as e:
@@ -204,16 +200,12 @@ class ActivateAccountView(View):
     def get(self,request,uidb64,token):
         try:
             uid=force_text(urlsafe_base64_decode(uidb64))
-            print(uid)
             user=User.objects.get(pk=uid)
-            print(user)
         except Exception as identifier:
             user=None
-        print(user.is_active,"user active before")
         if user is not None and generate_token.check_token(user,token):
             user.is_active=True
             user.save()
-            print(user.is_active,"user active after")
             return render(request,"activatesuccess.html")
         else:
             return render(request,"activatefail.html")   
