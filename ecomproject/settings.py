@@ -18,6 +18,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # for forcetext debug code
 # debug for forcetext
 import django 
+import os
 from django.utils.encoding import force_str
 django.utils.encoding.force_text = force_str
 
@@ -32,6 +33,12 @@ SECRET_KEY = 'django-insecure-n&$p=_hn&(gh9g&newonlw@z=l-s&fqnopqyv#-ei#41p%3kly
 DEBUG = True
 
 ALLOWED_HOSTS = []
+
+# Actual directory user files go to
+MEDIA_ROOT = os.path.join(os.path.dirname(BASE_DIR), 'media')
+
+# URL used to access the media
+MEDIA_URL = '/media/'
 
 
 # Application definition
@@ -206,14 +213,6 @@ EMAIL_BACKEND='django.core.mail.backends.smtp.EmailBackend'
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
 STATIC_URL = 'static/'
-
-MEDIA_URL='/images/'
-
-STATICFILES_DIRS =[
-    BASE_DIR / 'static'
-]
-
-MEDIA_ROOT= 'static/images'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
