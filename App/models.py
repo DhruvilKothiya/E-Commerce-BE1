@@ -3,8 +3,12 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 
 # Create User table
+
 class User(AbstractUser):
-    class Role(models.TextChoices): 
+    # Override the username field to be optional
+    username = models.CharField(max_length=100, blank=True, null=True, unique=True)
+
+    class Role(models.TextChoices):
         ADMIN = "ADMIN", "Admin"
         CUSTOMER = "CUSTOMER", "Customer"
 
@@ -14,13 +18,14 @@ class User(AbstractUser):
         default=Role.ADMIN
     )
 
+    # Override the save method to use email as the identifier
     def save(self, *args, **kwargs):
-        if not self.pk and not self.role: 
-            self.role = self.Role.ADMIN  
+        if not self.pk and not self.username: 
+            self.username = self.email  # Set email as username if not specified
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return self.username
+        return self.email 
 
 # Create Categories model
 class Categories(models.Model):
@@ -48,7 +53,6 @@ class Products(models.Model):
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     productname = models.CharField(max_length=100)
     productinfo = models.TextField(null=True, blank=True)
-    image = models.ImageField(null=True, blank=True)
     price = models.DecimalField(max_digits=7, decimal_places=2, null=True, blank=True)
     rating = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True) 
     numReviews=models.IntegerField(null=True, blank=True,default=0)
@@ -69,3 +73,11 @@ class Wishlist(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.product.productname}"
+
+#Create Multiple Image model
+class Images(models.Model):
+    product = models.ForeignKey(Products, on_delete=models.CASCADE, related_name="images")
+    image = models.ImageField(upload_to='images/', null=True, blank=True)
+
+    def __str__(self):
+        return f"Image for {self.product.productname}"
