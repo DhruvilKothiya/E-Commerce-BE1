@@ -81,3 +81,11 @@ class Images(models.Model):
 
     def __str__(self):
         return f"Image for {self.product.productname}"
+    
+class CartQty(models.Model):
+    user_id = models.ForeignKey(User, on_delete=models.CASCADE)
+    product_id = models.ForeignKey(Products, on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField(default=1)
+
+    def __str__(self):
+        return f"{self.user_id} - {self.product_id} - {self.quantity}"

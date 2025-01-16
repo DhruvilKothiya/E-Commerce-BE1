@@ -24,3 +24,9 @@ class UserSerializerwithRegister(LoginSerializer):
     class Meta:
         model=User
         fields='__all__'
+        
+        
+class CartQtySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CartQty
+        fields = '__all__'
