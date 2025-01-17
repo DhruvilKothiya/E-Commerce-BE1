@@ -82,10 +82,19 @@ class Images(models.Model):
     def __str__(self):
         return f"Image for {self.product.productname}"
     
-class CartQty(models.Model):
-    user_id = models.ForeignKey(User, on_delete=models.CASCADE)
-    product_id = models.ForeignKey(Products, on_delete=models.CASCADE)
-    quantity = models.PositiveIntegerField(default=1)
-
+class Cart(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
     def __str__(self):
-        return f"{self.user_id} - {self.product_id} - {self.quantity}"
+        return f"Cart for {self.user.username}"
+    
+class CartItem(models.Model):
+    cart=models.ForeignKey(Cart, on_delete=models.CASCADE,related_name='items')
+    product=models.ForeignKey(Products, on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField(default=1)
+    
+    def __str__(self):
+        return f"{self.quantity} x {self.product.productname}"
+

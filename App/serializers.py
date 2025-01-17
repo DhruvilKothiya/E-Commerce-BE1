@@ -28,5 +28,5 @@ class UserSerializerwithRegister(LoginSerializer):
         
 class CartQtySerializer(serializers.ModelSerializer):
     class Meta:
-        model = CartQty
+        model = CartItem
         fields = '__all__'
