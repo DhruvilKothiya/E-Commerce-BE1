@@ -68,12 +68,19 @@ def getProduct(request, pk):
     serializer = ProductSerializer(product, many=False)
     response_data = serializer.data
 
-     # Ensure the images contain only relative URLs
+    # # Fetch the quantity from the CartQty model for the authenticated user
+    # try:
+    #     cart_quantity = CartItem.objects.get(cart_id, product_id=product)
+    #     response_data["cart_quantity"] = cart_quantity.quantity
+    # except CartItem.DoesNotExist:
+    #     response_data["cart_quantity"] = 0  
+
+    # Ensure the images contain only relative URLs
     for image in response_data.get('images', []):
         if image.get('image'):
             image['image'] = image['image']
 
-    return Response(response_data)
+    return Response(response_data) 
 
 
 class LoginView(generics.CreateAPIView):
@@ -268,7 +275,63 @@ def searchProducts(request):
         return Response(serializer.data)
     else:
         return Response({'detail': 'No query provided'}, status=status.HTTP_400_BAD_REQUEST)
+    
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def add_to_cart(request):
+    data = request.data
+    # print(data)
+    user =request.user
+    # print(user)
 
+    try:
+        product_id = data.get('product_id')
+        # print("product_id",product_id)
+        
+        quantity = data.get('qty', 1)
+        # print('quant',quantity)
+        
+        cart_id=data.get('cart_id')
+        # print('cart_id',cart_id)
+
+        # Ensure the product exists
+        product = Products.objects.get(id=product_id)
+        # print("prodct",product)
+        
+        cart= Cart.objects.get(user=user)
+        # print(cart)
+        print(cart.id,product.id,quantity)
+
+        # Check if the cart entry already exists
+        cart_item= CartItem.objects.create(
+            cart_id=cart.id,
+            product_id=product.id,
+            quantity=quantity
+        )
+        # print('cart1',cart.id)
+        # print("product1",product.id)
+        # print("quantity1",quantity)
+        cart_item.save()
+
+        return Response({
+            "message": "Cart updated successfully",
+            "cart_item": CartQtySerializer(cart_item).data
+        }, status=status.HTTP_200_OK)
+
+    except Products.DoesNotExist:
+        return Response({"detail": "Product not found"}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_cart_items(request):
+    user = request.user
+    cart = Cart.objects.get(user=user)
+    cart_items = CartItem.objects.filter(cart_id=cart.id)
+    serializer = CartItemSerializer(cart_items, many=True)
+    return Response(serializer.data)
 
 
 
